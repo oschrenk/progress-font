@@ -1,0 +1,92 @@
+version: "3"
+
+vars:
+  INSTALL_DIR: "{{.HOME}}/Library/Fonts"
+  # Default colors matching sketchybar theme (style.lua)
+  FG: e8dcb7ff   # palette.white
+  BG: 48484878   # palette.grey @ 47% alpha
+
+# ---------------------------------------------------------------------------
+# To add a color variant (e.g. ProgressRingAlert for low battery):
+#
+#   1. Add build + install tasks below following the pattern of build-color /
+#      install-color, using a different NAME and colors.
+#
+#   2. In ProgressRingExample.lua, switch font family based on state:
+#
+#        local family = pct < 20 and "ProgressRingAlert" or "ProgressRingColor"
+#        ring:set({ icon = { string = pct_to_glyph(pct),
+#                            font = { family = family, style = "Regular", size = 24.0 } } })
+#
+#   Example variant tasks (uncomment and adjust colors to activate):
+#
+#   build-alert:
+#     desc: "Build ProgressRingAlert.ttf (red arc, for low battery)"
+#     cmds:
+#       - |
+#         uv run --with fonttools python3 src/make_progress_ring_color.py build/ProgressRingAlert.ttf \
+#           --fg ff3b30ff --bg 48484878
+#
+#   install-alert:
+#     desc: Build and install ProgressRingAlert
+#     deps: [build-alert]
+#     cmds:
+#       - cp build/ProgressRingAlert.ttf {{.INSTALL_DIR}}/
+#       - pkill -f fontd || true
+#       - echo "Installed ProgressRingAlert.ttf"
+# ---------------------------------------------------------------------------
+
+tasks:
+  build-mono:
+    desc: "Build ProgressRingMono.ttf. Optional: THICKNESS=N"
+    cmds:
+      - |
+        uv run --with fonttools python3 src/make_progress_ring_mono.py build/ProgressRingMono.ttf \
+          {{if .THICKNESS}}--thickness {{.THICKNESS}}{{end}}
+
+  install-mono:
+    desc: "Build and install ProgressRingMono. Optional: THICKNESS=N"
+    deps: [build-mono]
+    cmds:
+      - cp build/ProgressRingMono.ttf {{.INSTALL_DIR}}/
+      - pkill -f fontd || true
+      - echo "Installed ProgressRingMono.ttf"
+
+  check-mono:
+    desc: Validate build/ProgressRingMono.ttf (tables, name records, monowidth, codepoints)
+    deps: [build-mono]
+    cmds:
+      - uv run --with fonttools python3 src/check_font.py build/ProgressRingMono.ttf
+
+  fontbook-mono:
+    desc: Open ProgressRingMono.ttf in Font Book
+    deps: [build-mono]
+    cmds:
+      - open -a "Font Book" build/ProgressRingMono.ttf
+
+  test:
+    desc: Build, install, and open browser test page
+    deps: [install-mono]
+    cmds:
+      - open test.html
+
+  build-color:
+    desc: "Build ProgressRingColor.ttf. Optional: BG=rrggbbaa FG=rrggbbaa THICKNESS=N"
+    cmds:
+      - |
+        uv run --with fonttools python3 src/make_progress_ring_color.py build/ProgressRingColor.ttf \
+          --fg {{.FG}} --bg {{.BG}} \
+          {{if .THICKNESS}}--thickness {{.THICKNESS}}{{end}}
+
+  install-color:
+    desc: "Build and install ProgressRingColor. Optional: BG=rrggbbaa FG=rrggbbaa THICKNESS=N"
+    deps: [build-color]
+    cmds:
+      - cp build/ProgressRingColor.ttf {{.INSTALL_DIR}}/
+      - pkill -f fontd || true
+      - echo "Installed ProgressRingColor.ttf"
+
+  clean:
+    desc: Remove generated font files
+    cmds:
+      - rm -f build/ProgressRingMono.ttf build/ProgressRingColor.ttf
