@@ -86,7 +86,20 @@ tasks:
       - pkill -f fontd || true
       - echo "Installed ProgressRingColor.ttf"
 
+  build-battery-mono:
+    desc: "Build BatteryMono.ttf"
+    cmds:
+      - uv run --with fonttools python3 src/make_battery_mono.py build/BatteryMono.ttf
+
+  install-battery-mono:
+    desc: "Build and install BatteryMono"
+    deps: [build-battery-mono]
+    cmds:
+      - cp build/BatteryMono.ttf {{.INSTALL_DIR}}/
+      - pkill -f fontd || true
+      - echo "Installed BatteryMono.ttf"
+
   clean:
     desc: Remove generated font files
     cmds:
-      - rm -f build/ProgressRingMono.ttf build/ProgressRingColor.ttf
+      - rm -f build/ProgressRingMono.ttf build/ProgressRingColor.ttf build/BatteryMono.ttf
